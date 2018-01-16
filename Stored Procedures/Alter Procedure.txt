@@ -1,0 +1,12 @@
+alter procedure iv (@p_1 int)
+as
+
+if @p_1 is null
+    begin
+        select * from InspVeiculo
+    end 
+
+else
+    begin 
+        select * from InspVeiculo where InspVeiculo_ID =  @p_1
+    end
