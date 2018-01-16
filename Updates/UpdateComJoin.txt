@@ -1,0 +1,36 @@
+-- Registra o retorno das linhas 'B'
+Update Negativacao 
+   Set  tbRetornoSPC_ID1   =  b.RetSpc
+      , MsgRetornoInc1     =  b.RetSpcMsg
+From  Negativacao  n 
+Join  AVN01920RetB b on n.Revendedora_ID = b.Revendedora_ID
+Where n.Seq_Remessa  =  1920
+ and  b.IncExc       = 'i'
+
+-- Registra o retorno das linhas 'C'
+Update Negativacao 
+   Set  tbRetornoSPC_ID2   =  c.RetSpc
+      , MsgRetornoInc2     =  c.RetSpcMsg
+From  Negativacao  n 
+Join  AVN01920RetB b on n.Revendedora_ID = b.Revendedora_ID
+Join  AVN01920RetC c on n.Revendedora_ID = c.Revendedora_ID
+Where n.Seq_Remessa  =  1920
+ and  b.IncExc       = 'i'
+ and  c.IncExc       = 'i'
+ 
+-------------------------------------------------------------------------------- 
+ 
+Select n.Revendedora_ID, b.RetSpc, b.RetSpcMsg, b.Seq
+From  Negativacao  n 
+Join  AVN01920RetB b on n.Revendedora_ID = b.Revendedora_ID
+Where Seq_Remessa  =  1920
+ and  b.IncExc       = 'i'
+
+Select n.Revendedora_ID, c.RetSpc, c.RetSpcMsg, c.Seq
+From  Negativacao  n 
+Join  AVN01920RetB b on n.Revendedora_ID = b.Revendedora_ID
+Join  AVN01920RetC c on n.Revendedora_ID = c.Revendedora_ID
+Where Seq_Remessa  =  1920
+ and  b.IncExc       = 'i'
+ and  c.IncExc       = 'i'
+
