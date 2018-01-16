@@ -1,0 +1,22 @@
+  -- Devolução de nota
+SELECT DISTINCT CT.CODFIL, CT.NUMTIT, CT.DESDTIT, CT.NUMRECDEVOL, CT.DTEMISSAO, CT.VLORIG,
+                EN.NUMNOTA, EN.SERIE, EN.TPNOTA, EN.DTNOTA, EN.VLTOTAL,
+                EN.NUMNOTASAI, EN.SERIESAI, EN.DTNOTASAI
+ FROM CRC_TITULO CT
+ INNER JOIN CRC_ORIGEM CO ON CO.CODORIGCRC = CT.CODORIGCRC
+ INNER JOIN CRC_LANCTO CL ON CL.NUMTIT = CT.NUMTIT
+                          AND CL.CODFIL = CT.CODFIL
+                          AND CL.CODCLICRC = CT.CODCLICRC
+                          AND CL.DESDTIT = CT.DESDTIT
+                          AND CL.TPCLICRC = CT.TPCLICRC
+  INNER JOIN ENT_NOTA EN ON EN.CODFIL = CT.CODFIL
+                         AND EN.DTNOTA = CL.DTCONTABIL
+                         AND EN.CODREMET = CT.CODCLICRC
+                         AND EN.VLTOTAL = (CT.VLORIG*-1)
+                         AND EN.DTNOTA = to_date(&data)
+                         AND EN.TPNOTA IN (5,53,59)
+  --                       AND EN.NUMNOTA = 231541
+ WHERE CT.TPCLICRC = '1'
+   AND CT.CODFIL = &codfil
+   AND CO.CODGRPORIGCRC = 8
+   AND CL.NUMLANCTO IS NOT NULL;
