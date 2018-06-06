@@ -1,9 +1,3 @@
---------------------------------------------------------------------------------
--- fnRemoveZeros.sql
--- Data   : 27/08/2013
--- Autor  : Amauri
--- Remove zeros iniciais no número de um endereço ou de um telefone
---------------------------------------------------------------------------------
 
 USE ArquivosAvon
 GO
