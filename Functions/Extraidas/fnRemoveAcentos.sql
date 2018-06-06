@@ -1,10 +1,3 @@
---------------------------------------------------------------------------------
--- fnRemoveAcentos.sql
--- Data   : 26/08/2013
--- Autor  : Amauri
--- Remove acentos e outros caracteres do nome do municipio 
---------------------------------------------------------------------------------
-
 USE ArquivosAvon
 GO
 
@@ -19,14 +12,14 @@ BEGIN
 
 Declare @resultado Varchar(250),
         @t         Int,          -- Tamanho do texto original
-        @p         Int,          -- Ponteiro para o enÈsimo caractere
+        @p         Int,          -- Ponteiro para o en√©simo caractere
         @c         Char(1),      -- Um caractere do texto original
         @x         Int           -- Auxiliar
         
 Declare @ComAcentos Char(24),
         @SemAcentos Char(24)
         
-Set @ComAcentos = '¡¿¬√ƒ…» ÀÕÃŒœ”“‘’÷⁄Ÿ€‹«—'     
+Set @ComAcentos = '√Å√Ä√Ç√É√Ñ√â√à√ä√ã√ç√å√é√è√ì√í√î√ï√ñ√ö√ô√õ√ú√á√ë'     
 Set @SemAcentos = 'AAAAAEEEEIIIIOOOOOUUUUCN'  
         
 Set @resultado = ''
@@ -39,13 +32,13 @@ While @p <= @t Begin
   
   Set @x = CharIndex(@c, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
   
-  If @x > 0 Begin  -- Se o caractere È uma letra ...
+  If @x > 0 Begin  -- Se o caractere √© uma letra ...
      Set @resultado = @resultado + @c
   End
-  Else Begin       -- Se o caractere È uma letra com acento ...
+  Else Begin       -- Se o caractere √© uma letra com acento ...
      Set @x = CharIndex(@c, @ComAcentos)
      If @x > 0 Begin
-        Set @c = SubString(@SemAcentos, @x, 1) -- ObtÈm o caractere correspondente, sem acento
+        Set @c = SubString(@SemAcentos, @x, 1) -- Obt√©m o caractere correspondente, sem acento
         Set @resultado = @resultado + @c
      End
   End
