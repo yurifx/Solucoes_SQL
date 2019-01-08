@@ -1,0 +1,8 @@
+SELECT
+sum(vltotal)
+FROM mov_saida 
+WHERE dtnota = &data
+AND status <> 9
+AND tpnota = 512
+AND filped in(&codfil,&coddepos)
+AND numpedven <> 999999

@@ -1,0 +1,48 @@
+--6.1
+SELECT *
+  FROM CRC_TITULO TIT
+ INNER JOIN CRC_ORIGEM ORIG ON TIT.CODORIGCRC = ORIG.CODORIGCRC
+                            AND ORIG.CODGRPORIGCRC = 8
+ WHERE TPCLICRC = 1
+   AND CODFIL IN (&CODFIL, &CODDEP)
+   AND DTEMISSAO = '&DATA'
+   AND TIT.STATUS <> 9
+   AND NUMNOTA IS NULL
+   AND TIPOPED IS NOT NULL;
+			
+--14.2
+SELECT *
+  FROM (SELECT P.CODFIL,
+               P.NUMPEDVEN,
+               P.CODCLI,
+               P.DTPEDIDO,
+               P.DTCANCELA,
+               CAST(MAX(P.VLTOTAL) AS DECIMAL(15, 2)) VLTOTAL,
+               TRUNC(SYSDATE) DTIMPORT
+          FROM MOV_PEDIDO P
+         INNER JOIN CXA_LANCTO L ON L.NUMPED = P.NUMPEDVEN
+                                AND L.CODFIL = P.CODFIL
+                                AND L.CODOPER IS NOT NULL
+                                AND L.CODEVE <> 19
+                                AND (L.CODEVE NOT IN (31, 46) OR
+                                    (L.CODEVE IN (31, 46) AND L.STATUS <> 2))
+                                AND L.STATUS = 2
+         WHERE P.CODFIL IN (&CODFIL, &CODDEP)
+           AND P.DTCANCELA = TO_DATE('&DATA', 'DD/MM/RRRR')
+           AND P.STATUS = 9
+         GROUP BY P.CODFIL,
+                  P.NUMPEDVEN,
+                  P.CODCLI,
+                  P.DTPEDIDO,
+                  P.DTCANCELA,
+                  P.VLTOTAL);
+			   
+			   
+SELECT DTCANCELA FROM MOV_PEDIDO
+WHERE CODFIL = 19 AND NUMPEDVEN = 21378527;
+
+                     
+SELECT * FROM CXA_LANCTO WHERE
+CODFIL = 19 AND NUMPED = 21378527
+
+                                  

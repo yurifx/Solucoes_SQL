@@ -1,0 +1,9 @@
+select * from int_canc_ent_notaped 
+where codfil = 511
+/*and numnota = 4921
+and codremet = 18749*/
+and numpedcomp in (6114891, 6244712, 6262952)
+[23/10/2015 14:29:55] Sofftek - Solange Cristina Rueda Rueda: select codfil, tpnota, codremet, numnota, serie, dtnota, intdtatuest_can, coduser
+from int_canc_ent_nota where numnota in (4917,4918,4921) --and dtnota > '01/09/2011'
+and serie = '0' 
+and codfil in (521,528,507)

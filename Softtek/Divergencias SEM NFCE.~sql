@@ -1,0 +1,53 @@
+--Select Divergências s/ NFCE
+SELECT A.CODFIL,
+	  A.NUMCXA,
+	  B.ENDERECOIP,
+	  A.DTNOTA AS DTNOTA,
+	  SUM(A.VLTOTAL) AS MOVSAIDA,
+	  B.VLCONT AS PDVFISCAL,
+	  NVL(B.VLCONT, 0) - SUM(NVL(A.VLTOTAL, 0)) AS DIVERGÊNCIA
+
+FROM   MOV_SAIDA A, PDV_FISCAL B, CXA_CAIXAS C
+
+WHERE  A.CODFIL = B.CODFIL(+)
+	  AND A.NUMCXA = B.PDV(+)
+	  AND A.DTNOTA = B.DATA(+)
+	  AND A.CODFIL = C.CODFIL
+	  AND A.NUMCXA = C.NUMCXA
+	  AND B.TIPO(+) = 'F'
+	  AND A.TPNOTA = 512
+	  AND A.STATUS <> 9
+	  AND A.CODFIL NOT IN (6, 14, 519)
+	  AND A.SERIE NOT IN ('1', '2', '3', '4', '5')
+	  AND A.DTNOTA BETWEEN TO_DATE('01' || TO_CHAR(SYSDATE, 'mm/yyyy'), 'dd/mm/yyyy') AND
+	  SYSDATE - 1
+	  AND C.MODELONF IS NULL
+GROUP  BY A.CODFIL, A.DTNOTA, A.NUMCXA, B.ENDERECOIP, B.VLCONT
+HAVING ABS(SUM(A.VLTOTAL) - NVL(B.VLCONT, 0)) > 1
+
+/*
+UNION
+
+SELECT B.CODFIL,
+       B.PDV numcxa,
+       B.ENDERECOIP,
+       B.DATA dtnota,
+       b.Vlcont PDVFISCAL,
+       b.Vlcont DIVERGENCIA
+							
+FROM PDV_FISCAL b
+WHERE
+     b.DATA BETWEEN '01/09/2015' and sysdate - 1
+     AND b.tipo = 'F'
+     AND b.Vlcont > 0
+     AND not exists (select 'x'
+                     from mov_saida a
+                     where a.CODFIL = b.codfil
+                     AND a.numcxa = b.pdv
+                     AND a.dtnota = b.data
+                     AND a.tpnota = 512
+                     AND a.status <> 9
+                     and a.codfil not in (6, 14, 519)
+                     and a.DTNOTA between b.data and b.data)
+--group by B.CODFIL, B.PDV numcxa, B.ENDERECOIP, B.DATA dtnota, b.Vlcont PDVFISCAL, b.Vlcont DIVERGENCIA
+*/

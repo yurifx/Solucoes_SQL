@@ -1,0 +1,2 @@
+SELECT * FROM jnl_modulo;    
+SELECT * FROM JNL_FUNCAO

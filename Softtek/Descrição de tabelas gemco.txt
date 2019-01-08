@@ -1,0 +1,9 @@
+select * from 
+gemco_tabelas t inner join gemco_colunas c on
+t.tablename = c.tablename
+where 1=1
+--and t.tablename like '%CAD_FILIAL_COMPL%'
+and c.columnname like '%STATUS%'
+
+select * from all_all_tables
+where table_name like '%STATUS%'

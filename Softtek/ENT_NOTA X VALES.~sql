@@ -1,0 +1,40 @@
+/*Verificação 1:
+-- Existe ent_nota mas não existe título
+-- Valor da ent_nota difere do valor do título
+*/
+
+SELECT T1.CODFILIAL CODFIL, T1.NOTAENTRADA NOTAENTRADA, T1.VALORTOTAL VALORNOTA, T1.VALORVALE VALORVALE
+
+FROM (SELECT 
+  				 EN.CODFIL 																													CODFILIAL
+      ,EN.NUMNOTA 																												NOTAENTRADA
+  				,TRUNC((EN.VLTOTAL),1)																		VALORTOTAL
+      ,CRC.CODFILDEV 																									CODFILIALDEVOLUCAO
+      ,CRC.NUMNOTADEV 																								NUMNOTADEVOLUCAO
+  				,TRUNC(CRC.VLORIG,1) * (-1)													VALORVALE
+
+					 FROM ENT_NOTA  										EN
+
+ 					LEFT JOIN CRC_TITULO  CRC
+  				ON CRC.CODFILDEV  = EN.CODFIL
+  				AND    CRC.NUMNOTADEV = EN.NUMNOTA
+  					
+					 WHERE  EN.CODFIL      = &Filial
+ 					AND    EN.DTNOTA      = TO_DATE(&data)
+ 					AND				EN.DTNOTA						= CRC.DTEMISSAO
+ 					AND 			EN.TPNOTA 					IN (5, 53)
+ 					)	T1
+						
+WHERE T1.VALORTOTAL <> T1.VALORVALE
+OR T1.VALORVALE IS NULL
+
+
+
+
+SELECT * FROM CRC_TITULO WHERE
+CODFIL = 4 
+AND NUMNOTADEV = 481640
+
+
+SELECT * FROM CRC_LANCTO
+WHERE CODFIL = 4 AND NUMTIT = 4199873

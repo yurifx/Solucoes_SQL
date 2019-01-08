@@ -1,0 +1,10 @@
+select status, qtorig, qtfat, qtcomp from mov_itped 
+--where codfil = &codfil
+--and dtpedido = '&dtpedido'
+where numpedven = &numpedven
+--and status <> 9
+
+select * from mov_itped
+where numpedven = 20265897
+
+

@@ -1,0 +1,316 @@
+SELECT P_CODFIL AS CODFIL,
+       P_CODPTF AS CODPTF,
+       TO_DATE(P_DATA, 'DD-MM-YYYY') AS DATENT,
+       -- COLUNA: DINHEIRO
+       CAST((SELECT NVL(SUM(L.VALLAN), 0)
+               FROM CXA_LANCTO L
+              INNER JOIN DBAGEMCO_P.CXA_MOVIMENTO M ON L.CODOPER = M.CODOPER
+                                                   AND L.NUMCXA = M.NUMCXA
+                                                   AND L.NUMMOV = M.NUMMOV
+                                                   AND L.DATENT = M.DATAINI
+                                                   AND L.CODFILCXA =
+                                                       M.CODFIL
+              INNER JOIN CAD_FORMA F ON F.FORMA = L.FORMA
+                                    AND (F.FLGERAER = 'S' OR F.GERCXA = 'S')
+                                    AND F.CONDPGTO = L.CONDPGTO
+                                    AND F.CODFIL = L.CODFIL
+              INNER JOIN DBAGEMCO_P.CXA_EVENTO E ON E.CODEVE <> 19
+                                                AND E.CODEVE = L.FORMA
+                                                AND E.FLDIN = 'S'
+                                                AND E.FLEMITECOBRANCA IS NULL
+              WHERE L.STATUS <> 9
+                AND P_CAIXAGEMCO = 0
+                AND L.DATENT = TO_DATE(P_DATA, 'DD-MM-YYYY')
+                AND L.CODEVE <> 26
+                AND P_CODPTF = 0
+                AND L.CODFILCXA IN (P_CODFIL, P_CODDEPOS)) -
+            (SELECT NVL(SUM(VALOR), 0)
+               FROM CXA_SANGRIA
+              WHERE CODFIL IN (P_CODFIL, P_CODDEPOS)
+                AND DATA = TO_DATE(P_DATA, 'DD-MM-YYYY')
+                AND CODEVE = 35
+                AND P_CODPTF = 0
+                AND P_CAIXAGEMCO = 0) AS NUMBER(15, 2)) AS VLDINHEIRO,
+       -- COLUNA: CHEQUE
+       CAST((SELECT NVL(SUM(L.VALLAN), 0)
+               FROM CXA_LANCTO L
+              INNER JOIN CAD_FORMA F ON F.FORMA = L.FORMA
+                                    AND F.CONDPGTO = L.CONDPGTO
+                                    AND F.CODFIL = L.CODFIL
+                                    AND (F.FLGERAER = 'S' OR F.GERCXA = 'S')
+              INNER JOIN CXA_EVENTO E ON (E.CODEVE <> 19 AND
+                                         E.CODEVE = L.FORMA)
+                                     AND E.DADCHQ = 'S'
+              INNER JOIN CXA_MOVIMENTO M ON L.CODOPER = M.CODOPER
+                                        AND L.NUMCXA = M.NUMCXA
+                                        AND L.NUMMOV = M.NUMMOV
+                                        AND L.DATENT = M.DATAINI
+                                        AND L.DATENT =
+                                            TO_DATE(P_DATA, 'DD-MM-YYYY')
+                                        AND L.CODFILCXA = M.CODFIL
+              WHERE L.STATUS <> 9
+                AND L.CODEVE <> 26
+                AND L.CODFILCXA IN (P_CODFIL, P_CODDEPOS)
+                AND P_CODPTF = 0
+                AND P_CAIXAGEMCO = 0) AS NUMBER(15, 2)) AS VLCHEQUE,
+       -- COLUNA: VALE COMPRAS
+       CAST(0 AS NUMBER(15, 2)) AS VLVALECREDITO,
+       -- COLUNA: VALES EMITIDOS POR DEVOLUCAO DE VENDA
+       CAST((SELECT NVL(SUM(T.VLORIG), 0) * -1
+               FROM CRC_TITULO T
+              WHERE T.DTEMISSAO = TO_DATE(P_DATA, 'DD-MM-YYYY')
+                AND T.CODFIL IN (P_CODFIL, P_CODDEPOS)
+                AND T.CODORIGCRC = 9
+                AND T.NUMNOTA IS NOT NULL
+                AND P_CAIXAGEMCO = 0
+                AND P_CODPTF = 0
+                AND EXISTS (SELECT 1
+                       FROM ENT_NOTA E
+                      WHERE T.CODFILDEV = E.CODFIL
+                        AND T.NUMNOTADEV = E.NUMNOTA
+                        AND T.SERIEDEV = E.SERIE
+                        AND T.TPNOTADEV = E.TPNOTA)) AS NUMBER(15, 2)) AS VLVALEEMITDEV,
+       -- COLUNA: VALES EMITIDOS POR CANCELAMENTO DE PEDIDOS
+       CAST((SELECT NVL(SUM(T.VLORIG), 0) * -1
+               FROM CRC_LANCTO L
+              INNER JOIN CRC_TITULO T ON T.NUMTIT = L.NUMTIT
+                                     AND T.CODFIL = L.CODFIL
+                                     AND T.DESDTIT = L.DESDTIT
+                                     AND T.TPCLICRC = L.TPCLICRC
+                                     AND T.CGCCPF = L.CGCCPF
+                                     AND T.CODORIGCRC = L.CODORIGCRC
+              WHERE L.CODEVECRC IN (32, 33)
+                AND L.CODORIGCRC IN (7, 9)
+                AND LENGTH(T.DESDTIT) = 3
+                AND L.DTCONTABIL = TO_DATE(P_DATA, 'DD-MM-YYYY')
+                AND L.CODFIL IN (P_CODFIL, P_CODDEPOS)
+                AND P_CODPTF = 0
+                AND P_CAIXAGEMCO = 0) AS NUMBER(15, 2)) AS VLVALEEMITCANCP,
+       -- COLUNA: VALES EMITIDOS NO CONTAS A RECEBER
+       CAST((SELECT NVL(SUM(T.VLORIG), 0) * -1
+               FROM CRC_LANCTO L
+              INNER JOIN CRC_TITULO T ON T.NUMTIT = L.NUMTIT
+                                     AND T.CODFIL = L.CODFIL
+                                     AND T.DESDTIT = L.DESDTIT
+                                     AND T.TPCLICRC = L.TPCLICRC
+                                     AND T.CGCCPF = L.CGCCPF
+                                     AND T.CODORIGCRC = L.CODORIGCRC
+              WHERE L.CODEVECRC IN (34, 53, 54, 49)
+                AND L.DTCONTABIL = TO_DATE(P_DATA, 'DD-MM-YYYY')
+                AND L.CODFIL IN (P_CODFIL, P_CODDEPOS)
+                AND P_CODPTF = 0
+                AND P_CAIXAGEMCO = 0) AS NUMBER(15, 2)) AS VLVALEEMITCR,
+       -- COLUNA: VALE EMITIDOS POR ALTERACAO DE PEDIDO
+       CAST((SELECT NVL(SUM(T.VLORIG), 0) * -1
+               FROM CRC_LANCTO L
+              INNER JOIN CRC_TITULO T ON T.NUMTIT = L.NUMTIT
+                                     AND T.CODFIL = L.CODFIL
+                                     AND T.DESDTIT = L.DESDTIT
+                                     AND T.TPCLICRC = L.TPCLICRC
+                                     AND T.CGCCPF = L.CGCCPF
+                                     AND T.CODORIGCRC = L.CODORIGCRC
+              WHERE L.CODEVECRC IN (31, 32, 33)
+                AND L.CODORIGCRC IN (7, 8, 9)
+                AND LENGTH(T.DESDTIT) = 2
+                AND L.DTCONTABIL = TO_DATE(P_DATA, 'DD-MM-YYYY')
+                AND L.CODFIL IN (P_CODFIL, P_CODDEPOS)
+                AND P_CODPTF = 0
+                AND P_CAIXAGEMCO = 0) AS NUMBER(15, 2)) AS VLVALEEMITALTP,
+       -- COLUNA: VALES BAIXADOS
+       CAST((SELECT (CASE
+                       WHEN P_CAIXAGEMCO = 0 THEN
+                        (SELECT NVL(SUM(L.VLLANCTO), 0)
+                           FROM CRC_LANCTO L
+                          WHERE L.DTCONTABIL = TO_DATE(P_DATA, 'DD-MM-YYYY')
+                            AND L.NUMLANCTO IS NOT NULL
+                            AND L.CODFILREC IN (P_CODFIL, P_CODDEPOS)
+                            AND L.CODEVECRC = 36
+                            AND P_CODPTF = 0
+                            AND EXISTS
+                          (SELECT 1
+                                   FROM CRC_TITULO T
+                                  INNER JOIN CRC_ORIGEM ORI ON T.CODORIGCRC =
+                                                               ORI.CODORIGCRC
+                                                           AND ORI.FLDEVOL = 'S'
+                                  WHERE L.NUMTIT = T.NUMTIT
+                                    AND L.CODORIGCRC = T.CODORIGCRC
+                                    AND L.DESDTIT = T.DESDTIT
+                                    AND L.CODFIL = T.CODFIL
+                                    AND T.TPCLICRC = '1'
+                                    AND T.NUMRECDEVOL <> 0))
+                       ELSE
+                        (SELECT NVL(SUM(L.VLLANCTO), 0)
+                           FROM CRC_LANCTO L
+                          WHERE L.DTCONTABIL = TO_DATE(P_DATA, 'DD-MM-YYYY')
+                            AND L.NUMLANCTO IS NOT NULL
+                            AND L.CODFILREC IN (P_CODFIL, P_CODDEPOS)
+                            AND L.CODEVECRC = 36
+                            AND P_CODPTF = 0
+                            AND EXISTS (SELECT 1
+                                   FROM CXA_LANCTO CL
+                                  WHERE CL.CODFIL = L.CODFILREC
+                                    AND CL.CODFILCXA = 999
+                                    AND CL.CODEVE = 17
+                                    AND CL.NUMTIT = L.NUMTIT
+                                    AND CL.CODCLI = L.CODCLICRC
+                                    AND CL.CGCCPF = L.CGCCPF)
+                            AND EXISTS
+                          (SELECT 1
+                                   FROM CRC_TITULO T
+                                  INNER JOIN CRC_ORIGEM ORI ON T.CODORIGCRC =
+                                                               ORI.CODORIGCRC
+                                                           AND ORI.FLDEVOL = 'S'
+                                  WHERE L.NUMTIT = T.NUMTIT
+                                    AND L.CODORIGCRC = T.CODORIGCRC
+                                    AND L.DESDTIT = T.DESDTIT
+                                    AND L.CODFIL = T.CODFIL
+                                    AND T.TPCLICRC = '1'
+                                    AND T.NUMRECDEVOL <> 0))
+                    END)
+               FROM DUAL) AS NUMBER(15, 2)) AS VLVALEBAIX,
+       -- COLUNA: RETOMADA DE ADIANTAMENTO
+       CAST((SELECT (CASE
+                       WHEN P_CAIXAGEMCO = 0 THEN
+                        (SELECT NVL(SUM(I.VLTOTAL), 0)
+                           FROM MOV_ITSAIDA I
+                          WHERE I.DTNOTA = TO_DATE(P_DATA, 'DD-MM-RRRR')
+                            AND ((P_CODPTF = 0 AND
+                                I.CODFIL IN (P_CODFIL, P_CODDEPOS)) OR
+                                (CODFIL = P_CODPTF AND
+                                I.FILPED IN (P_CODFIL, P_CODDEPOS)))
+                            AND I.TPNOTA = 512
+                            AND I.NUMPEDVEN <> 999999)
+                       ELSE
+                        (SELECT NVL(SUM(I.VLTOTAL), 0)
+                           FROM MOV_ITSAIDA I
+                          INNER JOIN MOV_PEDIDO P ON I.NUMPEDVEN = P.NUMPEDVEN
+                          WHERE I.DTNOTA = TO_DATE(P_DATA, 'DD-MM-RRRR')
+                            AND ((P_CODPTF = 0 AND
+                                I.CODFIL IN (P_CODFIL, P_CODDEPOS)) OR
+                                (I.CODFIL = P_CODPTF AND
+                                I.FILPED IN (P_CODFIL, P_CODDEPOS)))
+                            AND I.TPNOTA = 512
+                            AND I.NUMPEDVEN <> 999999
+                            AND EXISTS
+                          (SELECT 1
+                                   FROM CXA_LANCTO CL
+                                  WHERE CL.DATENT = P.DTPEDIDO
+                                    AND CL.CODCLI = I.CODCLI
+                                    AND CL.NUMPED = I.NUMPEDVEN
+                                    AND CL.CODFILCXA = 999
+                                    AND CL.CODFIL In (P_CODFIL, P_CODDEPOS)))
+                    END)
+               FROM DUAL) AS NUMBER(15, 2)) AS VLRETADIANT,
+       -- COLUNA: VENDAS FATURADAS
+       CAST((SELECT NVL(SUM(TOTAL), 0)
+               FROM (SELECT S.NUMPEDVEN,
+                            S.NUMNOTA,
+                            S.SERIE,
+                            MAX(S.VLTOTAL) AS TOTAL
+                       FROM MOV_SAIDA S
+                      INNER JOIN CXA_LANCTO CL ON S.FILPED = CL.CODFIL
+                                              AND S.NUMPEDVEN = CL.NUMPED
+                                              AND CL.CODEVE IN (31, 46)
+                                              AND CL.STATUS NOT IN (8, 9)
+                      WHERE S.SERIE NOT LIKE '%U%'
+                        AND S.DTNOTA = TO_DATE(P_DATA, 'DD-MM-YYYY')
+                        AND S.FILPED IN (P_CODFIL, P_CODDEPOS)
+                        AND S.NUMPEDVEN NOT IN (999999, 0)
+                        AND S.STATUS <> 9
+                        AND P_CODPTF = 0
+                        AND P_CAIXAGEMCO = 0
+                      GROUP BY S.NUMPEDVEN, S.NUMNOTA, S.SERIE)) AS
+            NUMBER(15, 2)) AS VLVENDASFAT,
+       -- COLUNA: VENDAS
+       CAST((SELECT (CASE
+                       WHEN P_CAIXAGEMCO = 0 THEN
+                        (SELECT NVL(SUM(S.VLTOTAL), 0) VLTOTAL
+                           FROM mov_saida S
+                          WHERE (S.TPNOTA = 512)
+                            AND (S.STATUS <> 9)
+                            AND (S.DTNOTA = TO_DATE(P_DATA, 'DD-MM-RRRR'))
+                            AND ((P_CODPTF = 0 AND
+                                S.CODFIL IN (P_CODFIL, P_CODDEPOS)) OR
+                                (CODFIL = P_CODPTF AND
+                                S.FILPED In (P_CODFIL, P_CODDEPOS))))
+                       ELSE
+                        (SELECT NVL(SUM(S.VLTOTAL), 0) VLTOTAL
+                           FROM mov_saida S
+                          WHERE (S.TPNOTA = 512)
+                            AND (S.STATUS <> 9)
+                            AND (S.DTNOTA = TO_DATE(P_DATA, 'DD-MM-RRRR'))
+                            AND ((P_CODPTF = 0 AND
+                                S.CODFIL IN (P_CODFIL, P_CODDEPOS)) OR
+                                (CODFIL = P_CODPTF AND
+                                S.FILPED In (P_CODFIL, P_CODDEPOS)))
+                            AND (EXISTS (SELECT 1
+                                           FROM CXA_LANCTO CL
+                                          WHERE CL.DATENT = S.DTPEDIDO
+                                            AND CL.NUMPED = S.NUMPEDVEN
+                                            AND CL.CODFILCXA = 999
+                                            AND CL.CODCLI = S.CODCLI
+                                            AND S.FILPED = CL.CODFIL)))
+                    END) VALOR
+               FROM DUAL) AS NUMBER(15, 2)) AS VLVENDFAT,
+       -- COLUNA: DEVOLUCOES DE VENDAS
+       CAST((0) AS NUMBER(15, 2)) AS VLDEVOLVEND,
+       -- COLUNA: ENTRADA DE NOTAS DE DEVOLUCAO
+       CAST((SELECT NVL(SUM(ENT_NOTA.VLTOTAL), 0)
+               FROM DBAGEMCO_P.ENT_NOTA ENT_NOTA
+              WHERE (ENT_NOTA.TPNOTA In (5, 53, 59))
+                AND (ENT_NOTA.STATUS <> 9)
+                AND (ENT_NOTA.DTNOTA = TO_DATE(P_DATA, 'DD-MM-YYYY'))
+                AND (ENT_NOTA.CODFIL In (P_CODFIL, P_CODDEPOS))
+                AND P_CODPTF = 0
+                AND P_CAIXAGEMCO = 0) AS NUMBER(15, 2)) AS VLENTNOTAS,
+       -- COLUNA: ENTRADA DE NOTAS DE DEVOLUCAO - CANCELADAS
+       CAST((SELECT NVL(SUM(ENT_NOTA.VLTOTAL), 0)
+               FROM DBAGEMCO_P.ENT_NOTA ENT_NOTA
+              WHERE (ENT_NOTA.TPNOTA In (5, 53, 59))
+                AND (ENT_NOTA.STATUS = 9)
+                AND (ENT_NOTA.DTNOTA = TO_DATE(P_DATA, 'DD-MM-YYYY'))
+                AND (ENT_NOTA.CODFIL In (P_CODFIL, P_CODDEPOS))
+                AND P_CODPTF = 0
+                AND P_CAIXAGEMCO = 0) AS NUMBER(15, 2)) AS VLENTNOTASCANC,
+       -- COLUNA: ADIANTAMENTOS DE CLIENTES
+       CAST((0) AS NUMBER(15, 2)) AS VLADIANCLI,
+       -- COLUNA: ADIANTAMENTOS DE CLIENTES
+       CAST((SELECT NVL(SUM(L.VALLAN), 0)
+               FROM MOV_PEDIDO P
+              INNER JOIN CXA_LANCTO L ON L.NUMPED = P.NUMPEDVEN
+                                     AND L.CODFIL = P.CODFIL
+              WHERE L.DATENT = TO_DATE(P_DATA, 'DD-MM-YYYY HH24:MI:SS')
+                AND P.CODFIL IN (P_CODFIL, P_CODDEPOS)
+                AND L.CODOPER Is Not Null
+                AND L.CODEVE <> 19
+                AND (L.CODEVE NOT IN (31, 46) OR
+                    (L.CODEVE IN (31, 46) AND L.STATUS <> 2))
+                AND L.STATUS = 2
+                AND P_CODPTF = 0
+                AND (P_CAIXAGEMCO = 0 OR
+                    (P_CAIXAGEMCO = 1 AND CODFILCXA = 999))) AS
+            NUMBER(15, 2)) AS VLADIANPEDEMIT,
+       -- COLUNA: ADIANTAMENTOS DE CLIENTES
+       CAST((0) AS NUMBER(15, 2)) AS VLADIANVENDFAT,
+       -- COLUNA: ADIANTAMENTOS DE CLIENTES
+       CAST((SELECT NVL(SUM(VALOR), 0) VALOR
+               FROM (SELECT L.NUMPED, AVG(P.VLTOTAL) VALOR
+                       FROM MOV_PEDIDO P
+                      INNER JOIN CXA_LANCTO L ON L.NUMPED = P.NUMPEDVEN
+                                             AND L.CODFIL = P.CODFIL
+                      WHERE P.DTCANCELA = TO_DATE(P_DATA, 'DD-MM-YYYY')
+                        AND P.CODFIL IN (P_CODFIL, P_CODDEPOS)
+                        AND L.CODOPER Is Not Null
+                        AND L.CODEVE <> 19
+                        AND (L.CODEVE NOT IN (31, 46) OR
+                            (L.CODEVE IN (31, 46) AND L.STATUS <> 2))
+                        AND L.STATUS = 2
+                        AND P_CODPTF = 0
+                        AND P_CAIXAGEMCO = 0
+                      GROUP BY L.NUMPED)) AS NUMBER(15, 2)) AS VLADIANPEDCANC,
+       -- COLUNA: ADIANTAMENTOS DE CLIENTES
+       CAST((0) AS NUMBER(15, 2)) AS VLADIANPEDALT,
+       -- COLUNA: ADIANTAMENTOS DE CLIENTES
+       CAST((0) AS NUMBER(15, 2)) AS VLADIANVALESCR,
+       SYSDATE AS DTIMPORT
+  FROM DUAL
