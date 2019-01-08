@@ -1,0 +1,6 @@
+declare @p_Nome     Varchar(100),
+        @p_Navio_ID Int 
+
+Set @p_Nome = 'Teste 84'
+EXEC Navio_Ins @p_Nome, @p_Navio_ID OUTPUT
+Print @p_Navio_ID
