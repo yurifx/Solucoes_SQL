@@ -145,3 +145,15 @@ where codigo = '1100015001'
 
 
 <br>
+
+
+## Convert UTC date to Local
+
+```sql
+
+select  CONVERT(datetime, SWITCHOFFSET(CONVERT(datetimeoffset, 
+                                    LOG_DataLoads.StartTime), 
+                            DATENAME(TzOffset, SYSDATETIMEOFFSET()))) 
+       AS ColumnInLocalTime,
+       * from LOG_DataLoads 
+```
