@@ -157,3 +157,18 @@ select  CONVERT(datetime, SWITCHOFFSET(CONVERT(datetimeoffset,
        AS ColumnInLocalTime,
        * from LOG_DataLoads 
 ```
+
+or
+
+```sql
+SELECT DATEADD(mi, DATEDIFF(mi, GETUTCDATE(), GETDATE()), MyTable.UtcColumn) 
+       AS ColumnInLocalTime
+FROM MyTable
+```
+
+## Convert Local to UTC
+```
+SELECT DATEADD(second, DATEDIFF(second, GETDATE(), GETUTCDATE()), YOUR_DATE);
+```
+
+
