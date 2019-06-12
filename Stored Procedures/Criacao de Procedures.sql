@@ -1,6 +1,12 @@
 ﻿use TESTE_BANCO
 go
 
+create procedure insert_pedido (@pedido varchar(50))
+AS 
+
+insert into pedidos values (newid(), @pedido)
+
+
 create procedure teste (@p1 int, @p2 varchar(20))
 AS
 (
