@@ -116,21 +116,6 @@ where cus_name = 'abc'
 
 
 
-## Delete row
-
-```sql
-delete from ref_customers 
-where codigo = '1100015001'
-```
-
-
-
-
-
-<br>
-
-
-
 
 
 ## Delete row
